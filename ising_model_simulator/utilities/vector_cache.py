@@ -4,12 +4,17 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull
 
-class GeodesicDome:
-    def __init__(self, subdivisions: 0):
+class VectorCache:
+    def __init__(self, subdivisions=1):
         self.faces = []
+        self.vectors = self.generate_vectors(subdivisions)
+        
+
+    def generate_vectors(self, subdivisions = 1):
         vertices = self.generate_icosahedron()
         vertices = self.subdivide(subdivisions, vertices)
-        self.vertices = np.array(vertices)
+        self.normalize_vertices(vertices)
+        return np.array(vertices)
 
     def generate_icosahedron(self):
         phi = (1 + math.sqrt(5)) / 2  # Golden ratio
@@ -79,8 +84,6 @@ class GeodesicDome:
                 new_faces.extend([[v1, a, c], [v2, b, a], [v3, c, b], [a, b, c]])
 
             self.faces = new_faces
-
-        self.normalize_vertices(vertices)
         return vertices
 
 
@@ -91,17 +94,17 @@ class GeodesicDome:
         return vertices
 
 
-    def plot_geodesic_dome(self):
+    def plot_geodesic_dome(self, vertices):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
         # Create the convex hull to get the correct faces
-        hull = ConvexHull(self.vertices)
+        hull = ConvexHull(vertices)
         for simplex in hull.simplices:
             ax.add_collection3d(Poly3DCollection(
-                [self.vertices[simplex]], facecolors='c', linewidths=1, edgecolors='r', alpha=.25))
+                [vertices[simplex]], facecolors='c', linewidths=1, edgecolors='r', alpha=.25))
 
-        ax.scatter(self.vertices[:, 0], self.vertices[:, 1], self.vertices[:, 2], color='b')
+        ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], color='b')
 
         # Equal scaling
         ax.set_box_aspect([1, 1, 1])
@@ -114,6 +117,6 @@ class GeodesicDome:
 
 if __name__ == "__main__":
     subdivisions = 1
-    dome = GeodesicDome(subdivisions)
-    print(f"A class 1 Geodsic icosahedron with {subdivisions} subdivisions has {len(dome.vertices)} vertices and {len(dome.faces)} faces.")
-    dome.plot_geodesic_dome()
+    vec = VectorCache(subdivisions)
+    print(f"A class 1 Geodsic icosahedron with {subdivisions} subdivisions has {len(vec.vectors)} vertices.")
+    vec.plot_geodesic_dome(vec.vectors)
