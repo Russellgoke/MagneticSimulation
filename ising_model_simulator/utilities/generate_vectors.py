@@ -80,7 +80,7 @@ def generate_vectors(subdivisions = 1):
     # Normalize again once subdivided
     normalize_vertices(vertices)
     # size is constant so cast to a numpy array
-    return np.array(vertices)
+    return np.array(vertices, dtype=np.float64)
 
 def plot_geodesic_dome(vertices):
         fig = plt.figure()
