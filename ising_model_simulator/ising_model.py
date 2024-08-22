@@ -1,11 +1,11 @@
 from ising_model_simulator.utilities.vector_cache import VectorCache
 
 class IsingModel:
-    def __init__(self, x_dim, y_dim, z_dim, subdivisions):
+    def __init__(self, x_dim, y_dim, z_dim, subdivisions = 1, neighbors = 4):
         self.x_dim = x_dim
         self.y_dim = y_dim
         self.z_dim = z_dim
-        self.vcache = VectorCache(subdivisions)
+        self.vcache = VectorCache(subdivisions = subdivisions, neighbors=neighbors)
         self.lattice = self.initialize_lattice()
 
     def initialize_lattice(self):

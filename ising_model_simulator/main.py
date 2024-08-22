@@ -2,7 +2,7 @@ from .ising_model import IsingModel
 
 def main():
     # Initialize Ising Model
-    model = IsingModel(4, 3, 2, subdivisions = 1)  # Set up params, dimensions, tuple of dimension sizes
+    model = IsingModel(4, 3, 2, subdivisions = 0, neighbors = 1)  # Set up params, dimensions, tuple of dimension sizes
 
     # Run simulation
     model.run_simulation(1000)  # Example number of iterations
