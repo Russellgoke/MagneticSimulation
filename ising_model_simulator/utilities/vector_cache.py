@@ -1,6 +1,6 @@
 import numpy as np
-from generate_vectors import generate_vectors
-from generate_mag_field_contribution import calculate_magnetic_field
+from .generate_vectors import generate_vectors
+from .generate_mag_field_contribution import calculate_magnetic_field
 
 class VectorCache:
     def __init__(self, subdivisions=1, neighbors = 2):

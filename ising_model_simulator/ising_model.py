@@ -1,4 +1,4 @@
-from ising_model_simulator.utilities.vector_cache import VectorCache
+from .utilities.vector_cache import VectorCache
 
 class IsingModel:
     def __init__(self, x_dim, y_dim, z_dim, subdivisions = 1, neighbors = 4):
