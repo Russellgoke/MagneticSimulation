@@ -1,4 +1,4 @@
-from ising_model_simulator.utilities.vector_cache import VectorCache
+from utilities.vector_cache import VectorCache
 
 class IsingModel:
     def __init__(self, x_dim, y_dim, z_dim, subdivisions = 1, neighbors = 4):
@@ -33,4 +33,4 @@ class IsingModel:
 if __name__ == "__main__":
     model = IsingModel(4, 3, 2)
     model.run_simulation(100)
-    model.save_results("results.txt")
+    model.save_results("data/results.txt")

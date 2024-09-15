@@ -1,7 +1,7 @@
 import numpy as np
-from ising_model_simulator.utilities.generate_vectors import generate_vectors
-# from .generate_mag_field_contribution import calculate_magnetic_field
-from ising_model_simulator.utilities.generate_mag_field_contribution import calc_simp_mag_field
+from utilities.generate_vectors import generate_vectors
+from utilities.generate_mag_field_contribution import calculate_magnetic_field
+from utilities.generate_mag_field_contribution import calc_simp_mag_field
 
 
 class VectorCache:
