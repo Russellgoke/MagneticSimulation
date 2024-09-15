@@ -1,4 +1,4 @@
-from .ising_model import IsingModel
+from ising_model_simulator.ising_model import IsingModel
 
 def main():
     # Initialize Ising Model

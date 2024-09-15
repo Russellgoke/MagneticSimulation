@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 
 # mu is mu/4pi * magnitude of m, magnitude of m should be 1
 
+def calc_simp_mag_field(m, mu=1, grid_size=3):
+    half_grid = grid_size // 2
+
+    # Initialize a grid_size x grid_size x grid_size x 3 array to store the magnetic field vectors
+    B_vectors = np.full((grid_size, grid_size, grid_size, 3), m*mu)
+    B_vectors[half_grid, half_grid, half_grid] = 0
+
+    return B_vectors
+
 
 def calculate_magnetic_field(m, mu=1, grid_size=5):
     half_grid = grid_size // 2
@@ -64,7 +73,8 @@ def visualize_magnetic_field(B_vectors):
 
 if __name__ == "__main__":
     m_dipole = np.array([0, 0, 1])  # Magnetic dipole moment
-    magnetic_field_grid = calculate_magnetic_field(m_dipole, mu=1, grid_size=5)
+    # magnetic_field_grid = calculate_magnetic_field(m_dipole, mu=1, grid_size=5)
+    magnetic_field_grid = calc_simp_mag_field(m_dipole, mu=1, grid_size=3)
     # Visualize the magnetic field vectors
     visualize_magnetic_field(magnetic_field_grid)
     pass
