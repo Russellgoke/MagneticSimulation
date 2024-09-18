@@ -6,9 +6,9 @@ class IsingModel:
     def __init__(self, size, subdivisions = 0, neighbors = 4):
         self.size = size
         self.vcache = VectorCache(subdivisions = subdivisions, neighbors=neighbors)
-        self.lattice = self.initialize_lattice()
+        self.lattice = self.init_lattice()
 
-    def initialize_lattice(self):
+    def init_lattice(self):
         lattice = np.random.randint(
             low=0,
             high=self.vcache.vec_num,
