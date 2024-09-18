@@ -1,7 +1,9 @@
 from utilities.vector_cache import VectorCache
 
+import numpy as np
+
 class IsingModel:
-    def __init__(self, x_dim, y_dim, z_dim, subdivisions = 1, neighbors = 4):
+    def __init__(self, x_dim, y_dim, z_dim, subdivisions = 0, neighbors = 4):
         self.x_dim = x_dim
         self.y_dim = y_dim
         self.z_dim = z_dim
@@ -9,8 +11,13 @@ class IsingModel:
         self.lattice = self.initialize_lattice()
 
     def initialize_lattice(self):
-        # TODO Implement
-        return []
+        lattice = np.random.randint(
+            low=0,
+            high=self.vcache.vec_num,
+            size=(self.x_dim, self.y_dim, self.z_dim),
+            dtype=np.uint
+        )
+        return lattice
 
     def run_simulation(self, iterations):
         for _ in range(iterations):
