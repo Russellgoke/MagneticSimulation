@@ -7,11 +7,11 @@ from utilities.generate_mag_field_contribution import calc_simp_mag_field
 class VectorCache:
     def __init__(self, subdivisions=1, neighbors=2):
         self.vectors = generate_vectors(subdivisions)
-        self.vec_num = len(self.vectors)
+        self.num_vec = len(self.vectors)
         grid_size = 2 * neighbors + 1
         self.dipole_contributions = np.zeros(
-            (self.vec_num, grid_size, grid_size, grid_size, 3), dtype=np.float64)
-        for i in range(self.vec_num):
+            (self.num_vec, grid_size, grid_size, grid_size, 3), dtype=np.float64)
+        for i in range(self.num_vec):
             self.dipole_contributions[i] += calc_simp_mag_field(
                 self.vectors[i], mu=1, grid_size=grid_size)
 
