@@ -32,7 +32,7 @@ class IsingModel:
                         (x, y, z), self.vcache.dipole_contributions[vec_num])
 
     def stamp_onto_field(self, center, stamp):
-        radius = stamp.shape[0] // 2  # Assuming the stamp is cubic
+        radius = stamp.shape[0] // 2  # Assuming the stamp is cubic with odd dimensions
 
         # Create index arrays for x, y, z coordinates with wrapping
         x_indices = (np.arange(center[0] - radius,

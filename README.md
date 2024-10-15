@@ -1,0 +1,1 @@
+Bring the vector cahce helpers into vector cache function or at least together

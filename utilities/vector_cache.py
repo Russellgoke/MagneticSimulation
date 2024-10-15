@@ -12,7 +12,7 @@ class VectorCache:
         self.dipole_contributions = np.zeros(
             (self.num_vec, grid_size, grid_size, grid_size, 3), dtype=np.float64)
         for i in range(self.num_vec):
-            self.dipole_contributions[i] += calc_simp_mag_field(
+            self.dipole_contributions[i] += calc_simp_mag_field( # TODO dont use the simple one
                 self.vectors[i], mu=1, grid_size=grid_size)
 
 
