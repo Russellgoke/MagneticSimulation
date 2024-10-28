@@ -4,13 +4,14 @@ import math
 
 class VectorCache:
     def __init__(self, subdivisions=1, neighbors=2):
-        self.vectors = self.generate_vectors(subdivisions)
+        # self.vectors = self.generate_vectors(subdivisions)
+        self.vectors = self.generate_simp_vectors()
         self.num_vec = len(self.vectors)
         grid_size = 2 * neighbors + 1
         self.dipole_contributions = np.zeros(
             (self.num_vec, grid_size, grid_size, grid_size, 3), dtype=np.float64)
         for i in range(self.num_vec):
-            self.dipole_contributions[i] += self.calc_simp_mag_field( 
+            self.dipole_contributions[i] += self.calc_mag_field( 
                 self.vectors[i], mu=1, grid_size=grid_size)
 
     #Generate MAg field contributions
@@ -24,7 +25,7 @@ class VectorCache:
         return B_vectors
 
 
-    def calculate_magnetic_field(self, m, mu=1, grid_size=5):
+    def calc_mag_field(self, m, mu=1, grid_size=5):
         half_grid = grid_size // 2
 
         # Initialize a grid_size x grid_size x grid_size x 3 array to store the magnetic field vectors
@@ -51,6 +52,9 @@ class VectorCache:
 
         return B_vectors
 
+    def generate_simp_vectors(self):
+        return np.array([[0,0,1], [0,0,-1]], dtype=np.float64)
+            
     def generate_vectors(self, subdivisions = 1):
         def midpoint(v1, v2):
             return [(v1[i] + v2[i]) / 2 for i in range(len(v1))]

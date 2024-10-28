@@ -1,18 +1,21 @@
 from utilities.vector_cache import VectorCache
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 import numpy as np
 
 
 class IsingModel:
-    def __init__(self, size=5, external_field=(0, 0, 0), subdivisions=0, neighbors=4):
+    def __init__(self, size=5, external_field=(0, 0, 0), subdivisions=0, neighbors=4, T = 1.0):
         self.size = size
+        self.external_field = external_field
         self.vcache = VectorCache(
             subdivisions=subdivisions, neighbors=neighbors)
         self.lattice = self.init_lattice()
         self.mag_field = np.full((self.size, self.size, self.size, 3),
                                  external_field, dtype=np.float64)
         self.init_mag_field()
+        self.T = T  # Temperature (in units of k_B)
 
     def init_lattice(self):
         lattice = np.random.randint(
@@ -45,7 +48,7 @@ class IsingModel:
         # Use np.ix_ to create a 3D grid of indices for stamping the smaller array
         ix, iy, iz = np.ix_(x_indices, y_indices, z_indices)
 
-        # Stamp the smaller array onto the larger array using advanced indexing
+        # Stamp the smaller array onto the larger array using indexing
         self.mag_field[ix, iy, iz] += stamp
 
     def run_simulation(self, iterations):
@@ -53,8 +56,44 @@ class IsingModel:
             self.update_lattice()
 
     def update_lattice(self):
-        # TODO: Implement
-        pass
+        # Pick a random site
+        x = np.random.randint(0, self.size)
+        y = np.random.randint(0, self.size)
+        z = np.random.randint(0, self.size)
+
+        # Store the old spin index and vector
+        old_spin_idx = self.lattice[x, y, z]
+        old_spin_vec = self.vcache.vectors[old_spin_idx]
+        old_energy = -np.dot(old_spin_vec, self.mag_field[x][y][z])
+
+        # Propose a new spin index (ensure it's different from the current one)
+        num_spins = len(self.vcache.vectors)
+        new_spin_idx = np.random.randint(0, num_spins)
+        while new_spin_idx == old_spin_idx:
+            new_spin_idx = np.random.randint(0, num_spins)
+        new_spin_vec = self.vcache.vectors[new_spin_idx]
+        new_energy = -np.dot(new_spin_vec, self.mag_field[x][y][z])
+
+        # Total energy change
+        delta_E = new_energy - old_energy
+
+        # Decide whether to accept the change
+        if delta_E <= 0:
+            accept = True
+        else:
+            probability = np.exp(-delta_E / self.T)
+            accept = np.random.rand() < probability
+
+        if accept:
+            # Update the lattice
+            self.lattice[x, y, z] = new_spin_idx
+
+            # Update the magnetic field
+            # Remove the old spin's contribution and add the new spin's contribution
+            old_stamp = self.vcache.dipole_contributions[old_spin_idx]
+            new_stamp = self.vcache.dipole_contributions[new_spin_idx]
+            delta_stamp =  new_stamp - old_stamp
+            self.stamp_onto_field((x, y, z), delta_stamp)
 
     def save_results(self, filename):
         try:
@@ -111,6 +150,13 @@ class IsingModel:
         ax.set_zlabel('Z')
 
         plt.show()
+
+    def verify_field_accurate(self):
+        old = deepcopy(self.mag_field)
+        self.mag_field = np.full((self.size, self.size, self.size, 3),
+                            self.external_field, dtype=np.float64)
+        self.init_mag_field()
+        return (self.mag_field - old)
         
 
 
