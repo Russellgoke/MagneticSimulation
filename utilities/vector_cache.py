@@ -5,31 +5,45 @@ import math
 class VectorCache:
     def __init__(self, subdivisions=1, neighbors=2):
         # self.vectors = self.generate_vectors(subdivisions)
-        self.vectors = self.generate_simp_vectors()
+        #Decides what vector orientations are possible, rn only 2
+        self.vectors = self.up_down_vecs()
         self.num_vec = len(self.vectors)
         grid_size = 2 * neighbors + 1
         self.dipole_contributions = np.zeros(
             (self.num_vec, grid_size, grid_size, grid_size, 3), dtype=np.float64)
         for i in range(self.num_vec):
-            self.dipole_contributions[i] += self.calc_mag_field( 
+            self.dipole_contributions[i] += self.calc_simp_mag_field( 
                 self.vectors[i], mu=1, grid_size=grid_size)
 
     #Generate MAg field contributions
     def calc_simp_mag_field(self, m, mu=1, grid_size=3):
-        half_grid = grid_size // 2
+        mag_field = np.zeros((grid_size, grid_size, grid_size, 3), dtype=np.float64)
 
-        # Initialize a grid_size x grid_size x grid_size x 3 array to store the magnetic field vectors
-        B_vectors = np.full((grid_size, grid_size, grid_size, 3), m*mu)
-        B_vectors[half_grid, half_grid, half_grid] = 0
+        # Calculate the center index of the grid
+        center = grid_size // 2
 
-        return B_vectors
+        # Define the six adjacent positions to the center
+        adjacent_positions = [
+            (center - 1, center, center),  # Left
+            (center + 1, center, center),  # Right
+            (center, center - 1, center),  # Back
+            (center, center + 1, center),  # Front
+            (center, center, center - 1),  # Down
+            (center, center, center + 1),  # Up
+        ]
 
+        # Set the magnetic field at the adjacent positions
+        for pos in adjacent_positions:
+            x, y, z = pos
+            mag_field[x, y, z] = m * mu
+
+        return mag_field
 
     def calc_mag_field(self, m, mu=1, grid_size=5):
         half_grid = grid_size // 2
 
         # Initialize a grid_size x grid_size x grid_size x 3 array to store the magnetic field vectors
-        B_vectors = np.zeros((grid_size, grid_size, grid_size, 3))
+        B_vectors = np.zeros((grid_size, grid_size, grid_size, 3), dtype=np.float64)
 
         for x in range(grid_size):
             for y in range(grid_size):
@@ -52,7 +66,7 @@ class VectorCache:
 
         return B_vectors
 
-    def generate_simp_vectors(self):
+    def up_down_vecs(self):
         return np.array([[0,0,1], [0,0,-1]], dtype=np.float64)
             
     def generate_vectors(self, subdivisions = 1):
@@ -165,3 +179,5 @@ def plot_geodesic_dome(vertices):
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.set_title('Geodesic Dome (Class I)')
+
+        
