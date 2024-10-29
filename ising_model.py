@@ -6,7 +6,7 @@ import numpy as np
 
 
 class IsingModel:
-    def __init__(self, size=5, wrapping = False, external_field=(0, 0, 0), subdivisions=0, neighbors=4, T = 1.0):
+    def __init__(self, size=5, wrapping=False, external_field=(0, 0, 0), subdivisions=0, neighbors=4, T=1.0):
         self.size = size
         self.external_field = external_field
         self.wrapping = wrapping
@@ -40,7 +40,7 @@ class IsingModel:
         Stamps a smaller 3D array (stamp) onto a larger 3D magnetic field array at a specified center position.
         Wrapping around the boundaries occurs only if the 'wrapping' parameter is True.
         For wrapping=False, the function uses slicing for better performance.
-        
+
         Parameters:
         - center (tuple): A tuple (x, y, z) indicating the center position on the magnetic field where the stamp will be applied.
         - stamp (numpy.ndarray): A smaller 3D array representing the values to add to the magnetic field.
@@ -90,11 +90,10 @@ class IsingModel:
 
             # Use slicing for better performance
             self.mag_field[x_start_field:x_end_field,
-                        y_start_field:y_end_field,
-                        z_start_field:z_end_field] += stamp[x_start_stamp:x_end_stamp,
-                                                            y_start_stamp:y_end_stamp,
-                                                            z_start_stamp:z_end_stamp]
-
+                           y_start_field:y_end_field,
+                           z_start_field:z_end_field] += stamp[x_start_stamp:x_end_stamp,
+                                                               y_start_stamp:y_end_stamp,
+                                                               z_start_stamp:z_end_stamp]
 
     def run_simulation(self, iterations):
         for _ in range(iterations):
@@ -137,7 +136,7 @@ class IsingModel:
             # Remove the old spin's contribution and add the new spin's contribution
             old_stamp = self.vcache.dipole_contributions[old_spin_idx]
             new_stamp = self.vcache.dipole_contributions[new_spin_idx]
-            delta_stamp =  new_stamp - old_stamp
+            delta_stamp = new_stamp - old_stamp
             self.stamp_onto_field((x, y, z), delta_stamp)
 
     def save_results(self, filename):
@@ -149,6 +148,26 @@ class IsingModel:
                     out_file.write('\n')
         except IOError as e:
             print(f"Unable to open file: {filename} - {e}")
+
+    def get_mag_plot(self, gap = 20, trials = 30):
+        magnitude_arr = np.zeros(trials)
+        for i in range(trials):
+            magnitudes = np.linalg.norm(self.mag_field, axis=3)
+            magnitude_arr[i] = np.average(magnitudes)
+            for _ in range(gap):
+                self.update_lattice()
+        
+        return magnitude_arr
+    
+    def get_mag_plotz(self, gap = 20, trials = 30):
+        magnitude_arr = np.zeros(trials)
+        for i in range(trials):
+            magnitudes = self.mag_field[:][:][2]
+            magnitude_arr[i] = np.average(magnitudes)
+            for _ in range(gap):
+                self.update_lattice()
+        
+        return magnitude_arr
 
     def visualize_magnetic_field(self):
         # Create a 3D plot
@@ -199,7 +218,7 @@ class IsingModel:
     def verify_field_accurate(self):
         old = deepcopy(self.mag_field)
         self.mag_field = np.full((self.size[0], self.size[1], self.size[2], 3),
-                            self.external_field, dtype=np.float64)
+                                 self.external_field, dtype=np.float64)
         self.init_mag_field()
         diff = self.mag_field - old
         max_diff_magnitude = np.linalg.norm(diff, axis=-1).max()
@@ -207,7 +226,6 @@ class IsingModel:
         mean_mag_field_magnitude = mag_field_magnitudes.mean()
         error = max_diff_magnitude / mean_mag_field_magnitude
         return error
-        
 
 
 def test_stamp():
@@ -246,17 +264,17 @@ def test_stamp():
 
 
 def test_field_init():
-    model = IsingModel(size=(5,5,5), external_field=(
+    model = IsingModel(size=(5, 5, 5), external_field=(
         0, 0, 0), subdivisions=0, neighbors=0)
     # these vectors form a 4 by 3 in space to try and help visualize, num_vec = 12
-    test_vecs = [[1, 0, 1], [0, 1, 1], [-1, 0, 1], [0, -1, 1], [1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+    test_vecs = [[1, 0, 1], [0, 1, 1], [-1, 0, 1], [0, -1, 1], [1, 0, 0], [0, 1, 0],
+                 [-1, 0, 0], [0, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
     model.vcache.dipole_contributions = np.reshape(test_vecs, (12, 1, 1, 1, 3))
     # reset and re init mag field with fake values
-    model.mag_field = np.zeros((model.size[0], model.size[1], model.size[2], 3), dtype=np.float64)
+    model.mag_field = np.zeros(
+        (model.size[0], model.size[1], model.size[2], 3), dtype=np.float64)
     model.init_mag_field()
     model.visualize_magnetic_field()
-    
-    
 
 
 if __name__ == "__main__":
@@ -266,10 +284,10 @@ if __name__ == "__main__":
         0, 0, 0), subdivisions=0, neighbors=1)
     model.lattice = np.ones((6, 6, 6), dtype=np.uint8)
     # Set the second half (rows 3 to 5 along axis 0) to 5
-    model.lattice[3:,:,:] = 2
-    model.mag_field = np.zeros((model.size, model.size, model.size, 3), dtype=np.float64)
+    model.lattice[3:, :, :] = 2
+    model.mag_field = np.zeros(
+        (model.size, model.size, model.size, 3), dtype=np.float64)
     model.init_mag_field()
 
-    model.visualize_lattice()    
+    model.visualize_lattice()
     model.visualize_magnetic_field()
-
