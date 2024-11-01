@@ -3,20 +3,36 @@ import math
 
 
 class VectorCache:
-    def __init__(self, subdivisions=1, neighbors=2):
-        # self.vectors = self.generate_vectors(subdivisions)
-        #Decides what vector orientations are possible, rn only 2
-        self.vectors = self.up_down_vecs()
-        self.num_vec = len(self.vectors)
+    def __init__(self, desired_directions = 2, dipole = True, neighbors=2):
+        if 2 <= desired_directions <= 5:
+            self.vectors = self.up_down_vecs()
+            self.num_vec = len(self.vectors)
+        elif 6 <= desired_directions <=11:
+            self.vectors = self.six_vecs()
+            self.num_vec = len(self.vectors)
+        else:
+            # Mapping of subdivisions to number of vectors
+            subdivisions_mapping = {0: 12, 1: 42, 2: 162, 3: 642, 4: 2562}
+            # List of allowed directions and corresponding subdivisions
+            allowed_directions = [(directions, subd) for subd, directions in subdivisions_mapping.items()]
+            # Filter options less than or equal to desired_directions
+            possible_options = [option for option in allowed_directions if option[0] <= desired_directions]
+            #grab the last one
+            self.num_vec, subdivisions = possible_options[-1]
+            self.vectors = self.generate_vectors(subdivisions=subdivisions)
+        print(f"Vectors may point in {self.num_vec} directions")
+        
+        mag_field_function = self.dipole_mag_field if dipole else self.aligned_mag_field
+
         grid_size = 2 * neighbors + 1
         self.dipole_contributions = np.zeros(
             (self.num_vec, grid_size, grid_size, grid_size, 3), dtype=np.float64)
         for i in range(self.num_vec):
-            self.dipole_contributions[i] += self.calc_simp_mag_field( 
+            self.dipole_contributions[i] += mag_field_function( 
                 self.vectors[i], mu=1, grid_size=grid_size)
 
     #Generate MAg field contributions
-    def calc_simp_mag_field(self, m, mu=1, grid_size=3):
+    def aligned_mag_field(self, m, mu=1, grid_size=3):
         mag_field = np.zeros((grid_size, grid_size, grid_size, 3), dtype=np.float64)
 
         # Calculate the center index of the grid
@@ -39,7 +55,7 @@ class VectorCache:
 
         return mag_field
 
-    def calc_mag_field(self, m, mu=1, grid_size=5):
+    def dipole_mag_field(self, m, mu=1, grid_size=5):
         half_grid = grid_size // 2
 
         # Initialize a grid_size x grid_size x grid_size x 3 array to store the magnetic field vectors
@@ -68,6 +84,9 @@ class VectorCache:
 
     def up_down_vecs(self):
         return np.array([[0,0,1], [0,0,-1]], dtype=np.float64)
+    
+    def six_vecs(self):
+        return np.array([[0,0,1], [0,0,-1], [0,1,0], [0,-1,0], [1,0,0], [-1,0,0]], dtype=np.float64)
             
     def generate_vectors(self, subdivisions = 1):
         def midpoint(v1, v2):
@@ -149,12 +168,12 @@ class VectorCache:
 
 
 if __name__ == "__main__":
-    subdivisions = 1
-    vec = VectorCache(subdivisions, neighbors=1)
-    print(
-        f"A class 1 Geodsic icosahedron with {subdivisions} subdivisions has {len(vec.vectors)} vertices.")
-    print(
-        f"Dimensions of the dipole_contribution data is {vec.dipole_contributions.shape}")
+    for subdivisions in range(5):
+        vec = VectorCache(subdivisions, neighbors=1)
+        print(
+            f"A class 1 Geodsic icosahedron with {subdivisions} subdivisions has {len(vec.vectors)} vertices.")
+        print(
+            f"Dimensions of the dipole_contribution data is {vec.dipole_contributions.shape}")
 
 
 def plot_geodesic_dome(vertices):

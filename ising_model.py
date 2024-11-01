@@ -6,12 +6,11 @@ import numpy as np
 
 
 class IsingModel:
-    def __init__(self, size=5, wrapping=False, external_field=(0, 0, 0), subdivisions=0, neighbors=4, T=1.0):
+    def __init__(self, size=5, wrapping=False, external_field=(0, 0, 0), desired_directions=2, dipole=False, neighbors=4, T=1.0):
         self.size = size
         self.external_field = external_field
         self.wrapping = wrapping
-        self.vcache = VectorCache(
-            subdivisions=subdivisions, neighbors=neighbors)
+        self.vcache = VectorCache(neighbors=neighbors, dipole=dipole, desired_directions=desired_directions)
         self.lattice = self.init_lattice()
         self.mag_field = np.full((self.size[0], self.size[1], self.size[2], 3),
                                  external_field, dtype=np.float64)
@@ -212,6 +211,8 @@ class IsingModel:
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
+
+        ax.set_zlim(np.min(X), np.max(X))
 
         plt.show()
 
