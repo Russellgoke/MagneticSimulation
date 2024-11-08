@@ -161,7 +161,7 @@ class IsingModel:
     def get_mag_plotz(self, gap = 20, trials = 30):
         magnitude_arr = np.zeros(trials)
         for i in range(trials):
-            magnitudes = self.mag_field[:][:][2]
+            magnitudes = self.mag_field[:,:,:,2] - self.external_field[2]
             magnitude_arr[i] = np.average(magnitudes)
             for _ in range(gap):
                 self.update_lattice()
@@ -266,7 +266,7 @@ def test_stamp():
 
 def test_field_init():
     model = IsingModel(size=(5, 5, 5), external_field=(
-        0, 0, 0), subdivisions=0, neighbors=0)
+        0, 0, 0), desired_directions=12, neighbors=0)
     # these vectors form a 4 by 3 in space to try and help visualize, num_vec = 12
     test_vecs = [[1, 0, 1], [0, 1, 1], [-1, 0, 1], [0, -1, 1], [1, 0, 0], [0, 1, 0],
                  [-1, 0, 0], [0, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
@@ -280,15 +280,15 @@ def test_field_init():
 
 if __name__ == "__main__":
     # test_stamp()
-    # test_field_init()
-    model = IsingModel(size=6, external_field=(
-        0, 0, 0), subdivisions=0, neighbors=1)
-    model.lattice = np.ones((6, 6, 6), dtype=np.uint8)
-    # Set the second half (rows 3 to 5 along axis 0) to 5
-    model.lattice[3:, :, :] = 2
-    model.mag_field = np.zeros(
-        (model.size, model.size, model.size, 3), dtype=np.float64)
-    model.init_mag_field()
+    test_field_init()
+    # model = IsingModel(size=6, external_field=(
+    #     0, 0, 0), subdivisions=0, neighbors=1)
+    # model.lattice = np.ones((6, 6, 6), dtype=np.uint8)
+    # # Set the second half (rows 3 to 5 along axis 0) to 5
+    # model.lattice[3:, :, :] = 2
+    # model.mag_field = np.zeros(
+    #     (model.size, model.size, model.size, 3), dtype=np.float64)
+    # model.init_mag_field()
 
-    model.visualize_lattice()
-    model.visualize_magnetic_field()
+    # model.visualize_lattice()
+    # model.visualize_magnetic_field()
