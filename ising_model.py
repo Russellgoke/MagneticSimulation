@@ -1,21 +1,22 @@
 from utilities.vector_cache import VectorCache
+
 import matplotlib.pyplot as plt
 from copy import deepcopy
-
 import numpy as np
 
 
 class IsingModel:
-    def __init__(self, size=5, wrapping=False, external_field=(0, 0, 0), desired_directions=2, dipole=False, neighbors=4, T=1.0):
+    def __init__(self, size, vcache, wrapping=False, external_field=(0, 0, 0), T=1.0):
         self.size = size
+        self.vcache = vcache
         self.external_field = external_field
         self.wrapping = wrapping
-        self.vcache = VectorCache(neighbors=neighbors, dipole=dipole, desired_directions=desired_directions)
         self.lattice = self.init_lattice()
+        # done in two steps so stamp_onto_field can be reused
         self.mag_field = np.full((self.size[0], self.size[1], self.size[2], 3),
                                  external_field, dtype=np.float64)
         self.init_mag_field()
-        self.T = T  # Temperature (in units of k_B)
+        self.T = T  # Temperature (in units of k_B / J)
 
     def init_lattice(self):
         lattice = np.random.randint(
@@ -32,7 +33,7 @@ class IsingModel:
                 for z in range(self.size[2]):
                     vec_num = self.lattice[x][y][z]
                     self.stamp_onto_field(
-                        (x, y, z), self.vcache.dipole_contributions[vec_num])
+                        (x, y, z), self.vcache.effective_field[vec_num])
 
     def stamp_onto_field(self, center, stamp):
         """
@@ -133,8 +134,8 @@ class IsingModel:
 
             # Update the magnetic field
             # Remove the old spin's contribution and add the new spin's contribution
-            old_stamp = self.vcache.dipole_contributions[old_spin_idx]
-            new_stamp = self.vcache.dipole_contributions[new_spin_idx]
+            old_stamp = self.vcache.effective_field[old_spin_idx]
+            new_stamp = self.vcache.effective_field[new_spin_idx]
             delta_stamp = new_stamp - old_stamp
             self.stamp_onto_field((x, y, z), delta_stamp)
 
@@ -180,7 +181,7 @@ class IsingModel:
         v = self.mag_field[..., 1]  # Y component of B
         w = self.mag_field[..., 2]  # Z component of B
 
-        ax.quiver(X, Y, Z, u, v, w, length=0.05)
+        ax.quiver(X, Y, Z, u, v, w, length=0.2)
 
         # Set labels and title
         ax.set_xlabel('X')
@@ -265,12 +266,9 @@ def test_stamp():
 
 
 def test_field_init():
-    model = IsingModel(size=(5, 5, 5), external_field=(
-        0, 0, 0), desired_directions=12, neighbors=0)
+    vcache = VectorCache(desired_directions=2, d_strength = 1, d_neighbors=1, exchange=True)
+    model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
     # these vectors form a 4 by 3 in space to try and help visualize, num_vec = 12
-    test_vecs = [[1, 0, 1], [0, 1, 1], [-1, 0, 1], [0, -1, 1], [1, 0, 0], [0, 1, 0],
-                 [-1, 0, 0], [0, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
-    model.vcache.dipole_contributions = np.reshape(test_vecs, (12, 1, 1, 1, 3))
     # reset and re init mag field with fake values
     model.mag_field = np.zeros(
         (model.size[0], model.size[1], model.size[2], 3), dtype=np.float64)
@@ -279,8 +277,13 @@ def test_field_init():
 
 
 if __name__ == "__main__":
+    vcache = VectorCache(desired_directions=2, d_strength = 1, d_neighbors=1, exchange=False)
+    model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
+    model.mag_field = np.zeros(
+         (*model.size, 3), dtype=np.float64)
+    model.stamp_onto_field((2,2,2), vcache.effective_field[0])
     # test_stamp()
-    test_field_init()
+    # test_field_init()
     # model = IsingModel(size=6, external_field=(
     #     0, 0, 0), subdivisions=0, neighbors=1)
     # model.lattice = np.ones((6, 6, 6), dtype=np.uint8)
@@ -291,4 +294,4 @@ if __name__ == "__main__":
     # model.init_mag_field()
 
     # model.visualize_lattice()
-    # model.visualize_magnetic_field()
+    model.visualize_magnetic_field()
