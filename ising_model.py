@@ -13,7 +13,7 @@ class IsingModel:
         self.wrapping = wrapping
         self.lattice = self.init_lattice()
         # done in two steps so stamp_onto_field can be reused
-        self.mag_field = np.full((self.size[0], self.size[1], self.size[2], 3),
+        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3),
                                  external_field, dtype=np.float64)
         self.init_mag_field()
         self.T = T  # Temperature (in units of k_B / J)
@@ -67,7 +67,7 @@ class IsingModel:
             ix, iy, iz = np.ix_(x_indices, y_indices, z_indices)
 
             # Stamp the entire stamp onto the magnetic field
-            self.mag_field[ix, iy, iz] += stamp
+            self.effective_field[ix, iy, iz] += stamp
         else:
             # Adjust indices to avoid going out of bounds
             # Calculate the overlapping region between the stamp and the field
@@ -89,7 +89,7 @@ class IsingModel:
             z_end_stamp = z_end_field - z_start
 
             # Use slicing for better performance
-            self.mag_field[x_start_field:x_end_field,
+            self.effective_field[x_start_field:x_end_field,
                            y_start_field:y_end_field,
                            z_start_field:z_end_field] += stamp[x_start_stamp:x_end_stamp,
                                                                y_start_stamp:y_end_stamp,
@@ -108,7 +108,7 @@ class IsingModel:
         # Store the old spin index and vector
         old_spin_idx = self.lattice[x, y, z]
         old_spin_vec = self.vcache.vectors[old_spin_idx]
-        old_energy = -np.dot(old_spin_vec, self.mag_field[x][y][z])
+        old_energy = -np.dot(old_spin_vec, self.effective_field[x][y][z])
 
         # Propose a new spin index (ensure it's different from the current one)
         num_spins = len(self.vcache.vectors)
@@ -116,7 +116,7 @@ class IsingModel:
         while new_spin_idx == old_spin_idx:
             new_spin_idx = np.random.randint(0, num_spins)
         new_spin_vec = self.vcache.vectors[new_spin_idx]
-        new_energy = -np.dot(new_spin_vec, self.mag_field[x][y][z])
+        new_energy = -np.dot(new_spin_vec, self.effective_field[x][y][z])
 
         # Total energy change
         delta_E = new_energy - old_energy
@@ -152,7 +152,7 @@ class IsingModel:
     def get_mag_plot(self, gap = 20, trials = 30):
         magnitude_arr = np.zeros(trials)
         for i in range(trials):
-            magnitudes = np.linalg.norm(self.mag_field, axis=3)
+            magnitudes = np.linalg.norm(self.effective_field, axis=3)
             magnitude_arr[i] = np.average(magnitudes)
             for _ in range(gap):
                 self.update_lattice()
@@ -162,7 +162,7 @@ class IsingModel:
     def get_mag_plotz(self, gap = 20, trials = 30):
         magnitude_arr = np.zeros(trials)
         for i in range(trials):
-            magnitudes = self.mag_field[:,:,:,2] - self.external_field[2]
+            magnitudes = self.effective_field[:,:,:,2] - self.external_field[2]
             magnitude_arr[i] = np.average(magnitudes)
             for _ in range(gap):
                 self.update_lattice()
@@ -177,9 +177,9 @@ class IsingModel:
         Y, X, Z = np.meshgrid(np.arange(self.size[1]), np.arange(
             self.size[0]), np.arange(self.size[2]))
 
-        u = self.mag_field[..., 0]  # X component of B
-        v = self.mag_field[..., 1]  # Y component of B
-        w = self.mag_field[..., 2]  # Z component of B
+        u = self.effective_field[..., 0]  # X component of B
+        v = self.effective_field[..., 1]  # Y component of B
+        w = self.effective_field[..., 2]  # Z component of B
 
         ax.quiver(X, Y, Z, u, v, w, length=0.2)
 
@@ -191,7 +191,7 @@ class IsingModel:
         plt.show()
 
     def visualize_lattice(self):
-        lattice_vecs = np.zeros_like(self.mag_field)
+        lattice_vecs = np.zeros_like(self.effective_field)
         for x in range(self.size[0]):
             for y in range(self.size[1]):
                 for z in range(self.size[2]):
@@ -218,13 +218,13 @@ class IsingModel:
         plt.show()
 
     def verify_field_accurate(self):
-        old = deepcopy(self.mag_field)
-        self.mag_field = np.full((self.size[0], self.size[1], self.size[2], 3),
+        old = deepcopy(self.effective_field)
+        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3),
                                  self.external_field, dtype=np.float64)
         self.init_mag_field()
-        diff = self.mag_field - old
+        diff = self.effective_field - old
         max_diff_magnitude = np.linalg.norm(diff, axis=-1).max()
-        mag_field_magnitudes = np.linalg.norm(self.mag_field, axis=-1)
+        mag_field_magnitudes = np.linalg.norm(self.effective_field, axis=-1)
         mean_mag_field_magnitude = mag_field_magnitudes.mean()
         error = max_diff_magnitude / mean_mag_field_magnitude
         return error
@@ -270,7 +270,7 @@ def test_field_init():
     model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
     # these vectors form a 4 by 3 in space to try and help visualize, num_vec = 12
     # reset and re init mag field with fake values
-    model.mag_field = np.zeros(
+    model.effective_field = np.zeros(
         (model.size[0], model.size[1], model.size[2], 3), dtype=np.float64)
     model.init_mag_field()
     model.visualize_magnetic_field()
@@ -279,7 +279,7 @@ def test_field_init():
 if __name__ == "__main__":
     vcache = VectorCache(desired_directions=2, d_strength = 1, d_neighbors=1, exchange=False)
     model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
-    model.mag_field = np.zeros(
+    model.effective_field = np.zeros(
          (*model.size, 3), dtype=np.float64)
     model.stamp_onto_field((2,2,2), vcache.effective_field[0])
     # test_stamp()
