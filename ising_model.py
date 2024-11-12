@@ -1,4 +1,4 @@
-from utilities.vector_cache import VectorCache
+from vector_cache import VectorCache
 
 import matplotlib.pyplot as plt
 from copy import deepcopy
@@ -17,6 +17,7 @@ class IsingModel:
                                  external_field, dtype=np.float64)
         self.init_mag_field()
         self.T = T  # Temperature (in units of k_B / J)
+        self.E = 0
 
     def init_lattice(self):
         lattice = np.random.randint(
@@ -131,6 +132,7 @@ class IsingModel:
         if accept:
             # Update the lattice
             self.lattice[x, y, z] = new_spin_idx
+            self.E += delta_E
 
             # Update the magnetic field
             # Remove the old spin's contribution and add the new spin's contribution
@@ -149,25 +151,43 @@ class IsingModel:
         except IOError as e:
             print(f"Unable to open file: {filename} - {e}")
 
-    def get_mag_plot(self, gap = 20, trials = 30):
+    # def get_mag_plot(self, gap=20, trials=30):
+        # magnitude_arr = np.zeros(trials)
+        # lattice_vecs = np.zeros_like(self.effective_field)
+        # for i in range(trials):
+        #     for x in range(self.size[0]):
+        #         for y in range(self.size[1]):
+        #             for z in range(self.size[2]):
+        #                 vec_num = self.lattice[x][y][z]
+        #                 lattice_vecs[x, y, z] = self.vcache.vectors[vec_num]
+
+        #     # Calculate the average magnitude for this trial
+        #     magnitudes = np.linalg.norm(lattice_vecs, axis=3)
+        #     magnitude_arr[i] = np.average(magnitudes)
+
+        #     for _ in range(gap):
+        #         self.update_lattice()
+        
+        # return magnitude_arr
+
+    def get_data(self, gap=20, trials=30):
         magnitude_arr = np.zeros(trials)
+        E_arr = np.zeros(trials)
+        lattice_vecs_z = np.zeros(self.size, dtype=np.float64)
         for i in range(trials):
-            magnitudes = np.linalg.norm(self.effective_field, axis=3)
-            magnitude_arr[i] = np.average(magnitudes)
+            for x in range(self.size[0]):
+                for y in range(self.size[1]):
+                    for z in range(self.size[2]):
+                        vec_num = self.lattice[x][y][z]
+                        lattice_vecs_z[x, y, z] = self.vcache.vectors[vec_num][2]  # Z component
+
+            magnitude_arr[i] = np.average(lattice_vecs_z)
+            E_arr[i] = self.E
+
             for _ in range(gap):
                 self.update_lattice()
         
-        return magnitude_arr
-    
-    def get_mag_plotz(self, gap = 20, trials = 30):
-        magnitude_arr = np.zeros(trials)
-        for i in range(trials):
-            magnitudes = self.effective_field[:,:,:,2] - self.external_field[2]
-            magnitude_arr[i] = np.average(magnitudes)
-            for _ in range(gap):
-                self.update_lattice()
-        
-        return magnitude_arr
+        return magnitude_arr, E_arr
 
     def visualize_magnetic_field(self):
         # Create a 3D plot
@@ -187,6 +207,13 @@ class IsingModel:
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
+
+        min_limit = min(np.min(X), np.min(Y), np.min(Z))
+        max_limit = max(np.max(X), np.max(Y), np.max(Z))
+
+        ax.set_xlim(min_limit, max_limit)
+        ax.set_ylim(min_limit, max_limit)
+        ax.set_zlim(min_limit, max_limit)
 
         plt.show()
 
@@ -213,7 +240,12 @@ class IsingModel:
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
 
-        ax.set_zlim(np.min(X), np.max(X))
+        min_limit = min(np.min(X), np.min(Y), np.min(Z))
+        max_limit = max(np.max(X), np.max(Y), np.max(Z))
+
+        ax.set_xlim(min_limit, max_limit)
+        ax.set_ylim(min_limit, max_limit)
+        ax.set_zlim(min_limit, max_limit)
 
         plt.show()
 

@@ -7,3 +7,4 @@ Speedups:
 add some threads but has to be multiple trials or else the GIL will ruin it up to 7X
 make it always accept a flip with different probabilities 1.5-2X
 switch to c++ 3X, more with threading
+effectvie fireld becomes array of arrays I think
