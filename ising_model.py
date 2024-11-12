@@ -171,23 +171,31 @@ class IsingModel:
         # return magnitude_arr
 
     def get_data(self, gap=20, trials=30):
-        magnitude_arr = np.zeros(trials)
+        magnitude_arr_x = np.zeros(trials)
+        magnitude_arr_y = np.zeros(trials)
+        magnitude_arr_z = np.zeros(trials)
         E_arr = np.zeros(trials)
+        lattice_vecs_x = np.zeros(self.size, dtype=np.float64)
+        lattice_vecs_y = np.zeros(self.size, dtype=np.float64)
         lattice_vecs_z = np.zeros(self.size, dtype=np.float64)
         for i in range(trials):
             for x in range(self.size[0]):
                 for y in range(self.size[1]):
                     for z in range(self.size[2]):
                         vec_num = self.lattice[x][y][z]
+                        lattice_vecs_x[x, y, z] = self.vcache.vectors[vec_num][0]  # Z component
+                        lattice_vecs_y[x, y, z] = self.vcache.vectors[vec_num][1]  # Z component
                         lattice_vecs_z[x, y, z] = self.vcache.vectors[vec_num][2]  # Z component
 
-            magnitude_arr[i] = np.average(lattice_vecs_z)
+            magnitude_arr_x[i] = np.average(lattice_vecs_x)
+            magnitude_arr_y[i] = np.average(lattice_vecs_y)
+            magnitude_arr_z[i] = np.average(lattice_vecs_z)
             E_arr[i] = self.E
 
             for _ in range(gap):
                 self.update_lattice()
         
-        return magnitude_arr, E_arr
+        return magnitude_arr_x, magnitude_arr_y, magnitude_arr_z, E_arr
 
     def visualize_magnetic_field(self):
         # Create a 3D plot

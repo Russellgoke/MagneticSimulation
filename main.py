@@ -11,16 +11,19 @@ def main():
     # T is in units of k_B/ J
     # dipole strength is in units of (mu_0*mu_s^2/4*pi*J*a^3)
     # external field is in units of J 
-    vcache = VectorCache(desired_directions=6, d_strength = 1, d_neighbors=3, e_strength=0)
-    model = IsingModel((6, 6, 6), vcache, external_field=(0,0,0), wrapping=True, T=0.005)  # Set up params, dimensions, tuple of dimension sizes
+    vcache = VectorCache(desired_directions=6, d_strength = 1, d_neighbors=3, e_strength=1)
+    model = IsingModel((6, 6, 6), vcache, external_field=(0,0,1), wrapping=True, T=0.5)  # Set up params, dimensions, tuple of dimension sizes
     # Run simulation
     # model.run_simulation(200000)
-    M, E = model.get_data(gap=20, trials=1000)
-    # plt.plot(M)
-    plt.plot(E)
+    Mx, My, Mz, E = model.get_data(gap=1, trials=20000)
+    plt.plot(Mz, label='Mag_z')
+    plt.plot(My, label='Mag_y')
+    plt.plot(Mx, label='Mag_x')
+    # plt.plot(E)
+    plt.legend()
     plt.show()
-    model.visualize_lattice()
-    model.visualize_magnetic_field()
+    # model.visualize_lattice()
+    # model.visualize_magnetic_field()
     # MvT1d()
 
 def run_simulation_for_temperature(T, vcache):
