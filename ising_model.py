@@ -6,17 +6,17 @@ import numpy as np
 
 
 class IsingModel:
-    def __init__(self, size, vcache, wrapping=False, external_field=(0, 0, 0), T=1.0):
+    def __init__(self, size, vcache, ext_field_func, wrapping=False , T=1.0):
         self.size = size
         self.vcache = vcache
-        self.external_field = external_field
         self.wrapping = wrapping
-        self.lattice = self.init_lattice()
-        # done in two steps so stamp_onto_field can be reused
-        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3),
-                                 external_field, dtype=np.float64)
-        self.init_mag_field()
+        self.ext_field_func = ext_field_func
         self.T = T  # Temperature (in units of k_B / J)
+        self.lattice = self.init_lattice()
+        # done in two steps so stamp_onto_field can be reused, does not include ext_field
+        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3), 0, dtype=np.float64)
+        self.init_mag_field()
+        self.iteration = 0
         self.E = 0
 
     def init_lattice(self):
@@ -106,10 +106,11 @@ class IsingModel:
         y = np.random.randint(0, self.size[1])
         z = np.random.randint(0, self.size[2])
 
+        combined_field = self.effective_field[x][y][z] + self.ext_field_func(self.iteration)
         # Store the old spin index and vector
         old_spin_idx = self.lattice[x, y, z]
         old_spin_vec = self.vcache.vectors[old_spin_idx]
-        old_energy = -np.dot(old_spin_vec, self.effective_field[x][y][z])
+        old_energy = -np.dot(old_spin_vec, combined_field)
 
         # Propose a new spin index (ensure it's different from the current one)
         num_spins = len(self.vcache.vectors)
@@ -117,7 +118,7 @@ class IsingModel:
         while new_spin_idx == old_spin_idx:
             new_spin_idx = np.random.randint(0, num_spins)
         new_spin_vec = self.vcache.vectors[new_spin_idx]
-        new_energy = -np.dot(new_spin_vec, self.effective_field[x][y][z])
+        new_energy = -np.dot(new_spin_vec, combined_field)
 
         # Total energy change
         delta_E = new_energy - old_energy
@@ -140,6 +141,7 @@ class IsingModel:
             new_stamp = self.vcache.effective_field[new_spin_idx]
             delta_stamp = new_stamp - old_stamp
             self.stamp_onto_field((x, y, z), delta_stamp)
+        self.iteration += 1
 
     def save_results(self, filename):
         try:
@@ -150,25 +152,6 @@ class IsingModel:
                     out_file.write('\n')
         except IOError as e:
             print(f"Unable to open file: {filename} - {e}")
-
-    # def get_mag_plot(self, gap=20, trials=30):
-        # magnitude_arr = np.zeros(trials)
-        # lattice_vecs = np.zeros_like(self.effective_field)
-        # for i in range(trials):
-        #     for x in range(self.size[0]):
-        #         for y in range(self.size[1]):
-        #             for z in range(self.size[2]):
-        #                 vec_num = self.lattice[x][y][z]
-        #                 lattice_vecs[x, y, z] = self.vcache.vectors[vec_num]
-
-        #     # Calculate the average magnitude for this trial
-        #     magnitudes = np.linalg.norm(lattice_vecs, axis=3)
-        #     magnitude_arr[i] = np.average(magnitudes)
-
-        #     for _ in range(gap):
-        #         self.update_lattice()
-        
-        # return magnitude_arr
 
     def get_data(self, gap=20, trials=30):
         magnitude_arr_x = np.zeros(trials)
@@ -259,8 +242,7 @@ class IsingModel:
 
     def verify_field_accurate(self):
         old = deepcopy(self.effective_field)
-        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3),
-                                 self.external_field, dtype=np.float64)
+        self.effective_field = np.full((self.size[0], self.size[1], self.size[2], 3), 0, dtype=np.float64)
         self.init_mag_field()
         diff = self.effective_field - old
         max_diff_magnitude = np.linalg.norm(diff, axis=-1).max()
@@ -271,8 +253,9 @@ class IsingModel:
 
 
 def test_stamp():
+    # deprecated
     # neighbors=1 means that this inital settup has no magnetic field at all
-    model = IsingModel(5, external_field=(0, 0, 0),
+    model = IsingModel(5, ext_field=(0, 0, 0),
                        subdivisions=0, neighbors=0)
     # A test vector, it is expanding from center equally
     vectors = np.array([
@@ -306,8 +289,9 @@ def test_stamp():
 
 
 def test_field_init():
+    # deprecated
     vcache = VectorCache(desired_directions=2, d_strength = 1, d_neighbors=1, exchange=True)
-    model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
+    model = IsingModel((5, 5, 5), vcache, ext_field=(0, 0, 0))
     # these vectors form a 4 by 3 in space to try and help visualize, num_vec = 12
     # reset and re init mag field with fake values
     model.effective_field = np.zeros(
@@ -318,13 +302,13 @@ def test_field_init():
 
 if __name__ == "__main__":
     vcache = VectorCache(desired_directions=2, d_strength = 1, d_neighbors=1, exchange=False)
-    model = IsingModel((5, 5, 5), vcache, external_field=(0, 0, 0))
+    model = IsingModel((5, 5, 5), vcache, ext_field=(0, 0, 0))
     model.effective_field = np.zeros(
          (*model.size, 3), dtype=np.float64)
     model.stamp_onto_field((2,2,2), vcache.effective_field[0])
     # test_stamp()
     # test_field_init()
-    # model = IsingModel(size=6, external_field=(
+    # model = IsingModel(size=6, ext_field=(
     #     0, 0, 0), subdivisions=0, neighbors=1)
     # model.lattice = np.ones((6, 6, 6), dtype=np.uint8)
     # # Set the second half (rows 3 to 5 along axis 0) to 5

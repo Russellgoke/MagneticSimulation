@@ -1,9 +1,14 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import math
 
 
 class VectorCache:
-    def __init__(self, desired_directions=2, d_strength = 0, d_neighbors=1, e_strength=0):
+    def __init__(self, desired_directions=2, d_strength=0, d_neighbors=1, e_strength=0):
+        self.d_strength = d_strength
+        self.e_strength = e_strength
+        self.d_neighbors = d_neighbors
+
         if 2 <= desired_directions <= 5:
             self.vectors = self.up_down_vecs()
             self.num_vec = len(self.vectors)
@@ -74,16 +79,18 @@ class VectorCache:
             for y in range(grid_size):
                 for z in range(grid_size):
                     # Position vector r relative to the center
-                    r = np.array([x - half_grid, y - half_grid, z - half_grid]) # dimensions of lattice const
-                    r_magnitude = np.linalg.norm(r) 
+                    # dimensions of lattice const
+                    r = np.array([x - half_grid, y - half_grid, z - half_grid])
+                    r_magnitude = np.linalg.norm(r)
 
                     if r_magnitude == 0:
                         continue  # Skip the center point to avoid division by zero
 
                     # Calculate the magnetic field vector B at this point
                     r_unit = r / r_magnitude
-                    dot_product = np.dot(s, r_unit) # s is in units of mu_s
-                    B_vector = (3 * dot_product * r_unit - s) / r_magnitude**3 # dimensionless
+                    dot_product = np.dot(s, r_unit)  # s is in units of mu_s
+                    B_vector = (3 * dot_product * r_unit - s) / \
+                        r_magnitude**3  # dimensionless
 
                     B_vectors[x, y, z] = B_vector
 
@@ -173,6 +180,42 @@ class VectorCache:
         normalize_vertices(vertices)
         # size is constant so cast to a numpy array
         return np.array(vertices, dtype=np.float64)
+
+    def visualize_effective_field(self, s):
+        grid_size = len(self.effective_field[0])
+        field = np.zeros_like(self.effective_field[0])
+
+        field += self.d_strength * self.dipole_mag_field(
+            s, grid_size=grid_size)
+
+        field += self.e_strength * self.exchange_field(
+            s, grid_size=grid_size)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        Y, X, Z = np.meshgrid(np.arange(grid_size), np.arange(
+            grid_size), np.arange(grid_size))
+
+        u = field[..., 0]  # X component of B
+        v = field[..., 1]  # Y component of B
+        w = field[..., 2]  # Z component of B
+
+        ax.quiver(X, Y, Z, u, v, w, length=0.2)
+
+        # Set labels and title
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        min_limit = min(np.min(X), np.min(Y), np.min(Z))
+        max_limit = max(np.max(X), np.max(Y), np.max(Z))
+
+        ax.set_xlim(min_limit, max_limit)
+        ax.set_ylim(min_limit, max_limit)
+        ax.set_zlim(min_limit, max_limit)
+
+        plt.show()
 
 
 if __name__ == "__main__":
